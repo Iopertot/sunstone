@@ -1,13 +1,10 @@
 # Sunstone
 
-A personal, non-commercial music player for people who actually want
-their listens remembered. Built with **Svelte 5 + SvelteKit** for the
-UI and **Tauri (Rust)** for everything else — audio graph, library
-scanner, and a Last.fm scrobbling pipeline designed to survive a
-closed laptop, dead wifi, or Last.fm having a bad day.
+A personal, non-commercial music player made out of pure hatred and spite. Built with **Svelte 5 + SvelteKit** for the
+UI and **Tauri (Rust)** for everything else audio graph, library
+scanner, and a Last.fm scrobbling pipeline.
 
-Same spirit as [Geoxor's Amethyst](https://github.com/Geoxor/Amethyst)
-— a proper desktop player built around a Web Audio node graph — with
+Same spirit as [Geoxor's Amethyst](https://github.com/Geoxor/Amethyst) a proper desktop player built around a Web Audio node graph with
 a different stack and a scrobbler that's actually durable.
 
 > **Status:** early skeleton, not a finished clone. The player
@@ -18,11 +15,11 @@ a different stack and a scrobbler that's actually durable.
 
 ## Why Tauri, not Electron
 
-Most desktop music players are a website wearing a window frame — a
+Most desktop music players are a website wearing a window frame a
 full copy of Chromium bundled in just to draw a sidebar and a
 progress bar. Sunstone uses your OS's own webview instead, and the
 things that need to keep running when the window is minimized — the
-audio graph, the scrobble queue — run as a real Rust background
+audio graph, the scrobble queue run as a real Rust background
 service rather than code tied to a UI component's lifecycle.
 
 ## Scrobbling that's actually durable
@@ -31,13 +28,13 @@ Three rules the Last.fm API cares about, implemented in
 [`src-tauri/src/lastfm.rs`](src-tauri/src/lastfm.rs):
 
 1. `track.updateNowPlaying` (live status) and `track.scrobble` (the
-   permanent record) are separate calls — both are implemented.
+   permanent record) are separate calls both are implemented.
 2. A track only qualifies once it's played **≥50% of its duration or
    4 minutes, whichever is lower**, and only if it's longer than 30s.
 3. Every eligible scrobble is written to a local sqlite queue
    immediately (`scrobble_queue` table), and a background loop
-   retries it every 30 seconds — in batches of up to 50, per the
-   API's array-parameter convention — until Last.fm accepts it. This
+   retries it every 30 seconds in batches of up to 50, per the
+   API's array-parameter convention until Last.fm accepts it. This
    is what survives a dropped connection, the machine sleeping, or
    the app closing mid-track, which is the usual way scrobblers
    quietly lose plays.
@@ -51,7 +48,7 @@ Three rules the Last.fm API cares about, implemented in
   for a future visualizer
 - Last.fm OAuth-style auth flow, now-playing updates, and a
   crash/offline-durable scrobble queue
-- Warm, dark **Sunstone** theme — see
+- Warm, dark **Sunstone** theme see
   [`src/app.css`](src/app.css) for the full rationale, not just hex
   codes
 
@@ -88,7 +85,7 @@ Three rules the Last.fm API cares about, implemented in
 
    Fill in `api_key` and `api_secret`.
 5. `npm run tauri dev` again. Call the `lastfm_start_auth` command
-   from the frontend (wire a "Connect Last.fm" button in Settings —
+   from the frontend (wire a "Connect Last.fm" button in Settings
    not built yet) to get an auth URL, open it, approve access, then
    call `lastfm_complete_auth` with the token to store a permanent
    session key.
@@ -143,7 +140,7 @@ Roughly in order:
 - [ ] Settings view wiring the Last.fm connect flow and folder
       picker (`@tauri-apps/plugin-dialog` is already a dependency)
 - [ ] Library grid/list reading from `list_tracks`
-- [ ] A visualizer reading `player.analyser` — this is where
+- [ ] A visualizer reading `player.analyser` this is where
       Amethyst's look lives
 - [ ] Queue/playlist state, persisted to sqlite alongside the
       scrobble queue
