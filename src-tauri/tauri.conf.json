@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Sunstone",
+	"version": "0.1.0",
+	"identifier": "moe.local.sunstone",
+	"build": {
+		"beforeDevCommand": "npm run dev",
+		"beforeBuildCommand": "npm run build",
+		"devUrl": "http://localhost:1420",
+		"frontendDist": "../build"
+	},
+	"app": {
+		"windows": [
+			{
+				"title": "Sunstone",
+				"width": 1100,
+				"height": 720,
+				"minWidth": 820,
+				"minHeight": 560,
+				"decorations": true,
+				"backgroundColor": "#17110c"
+			}
+		],
+		"security": {
+			"csp": null,
+			"assetProtocol": {
+				"enable": true,
+				"scope": ["**/*"]
+			}
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": "all",
+		"icon": ["icons/icon.png"]
+	}
+}
