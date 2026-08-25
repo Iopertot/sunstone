@@ -1,21 +1,3 @@
-//! Last.fm scrobbling.
-//!
-//! The API itself is small; the reliability comes from three rules most
-//! quick integrations skip:
-//!
-//! 1. `track.updateNowPlaying` and `track.scrobble` are different calls.
-//!    Now-playing is fire-and-forget UI candy; the scrobble is the durable
-//!    record and is what actually needs to survive.
-//! 2. A scrobble only qualifies once the track has played for at least
-//!    half its duration or 4 minutes, whichever is LOWER, and only for
-//!    tracks longer than 30s. The timestamp submitted is when the track
-//!    STARTED, not when it crossed the threshold.
-//! 3. Nothing here should live only in memory. Every scrobble is written
-//!    to a local sqlite queue the moment it's eligible, and a background
-//!    loop retries anything unsent - so a dropped connection, a sleeping
-//!    machine, or the app being closed mid-track doesn't just lose it,
-//!    which is the single most common failure mode in player scrobblers.
-
 use anyhow::{anyhow, Result};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -35,8 +17,6 @@ pub struct ScrobbleTrack {
 	pub started_at: i64,
 }
 
-/// updateNowPlaying doesn't need a start timestamp - it's a live "here's
-/// what's on" ping, not the durable record.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NowPlayingTrack {
 	pub artist: String,
@@ -49,9 +29,6 @@ pub struct LastfmClient {
 	http: reqwest::Client,
 	api_key: String,
 	api_secret: String,
-	/// None until the user completes the browser auth flow. Persisted to
-	/// disk after that - Last.fm session keys don't expire, so this is a
-	/// one-time setup, not a per-launch login.
 	session_key: Mutex<Option<String>>,
 }
 
@@ -70,8 +47,6 @@ impl LastfmClient {
 	}
 
 	fn sign(&self, params: &BTreeMap<&str, String>) -> String {
-		// Last.fm's signing scheme: concatenate sorted key+value pairs
-		// (excluding `format`), append the shared secret, md5 it.
 		let mut raw = String::new();
 		for (k, v) in params {
 			if *k == "format" {
@@ -100,10 +75,6 @@ impl LastfmClient {
 		Ok(body)
 	}
 
-	// --- Auth (desktop "web auth" flow) ------------------------------
-
-	/// Step 1: get a token, then send the user to the returned URL in
-	/// their browser to approve access.
 	pub async fn get_auth_token(&self) -> Result<String> {
 		let mut params = BTreeMap::new();
 		params.insert("method", "auth.getToken".to_string());
@@ -118,8 +89,6 @@ impl LastfmClient {
 		)
 	}
 
-	/// Step 2: after the user approves in-browser, exchange the token for
-	/// a permanent session key and persist it.
 	pub async fn complete_auth(&self, token: &str) -> Result<String> {
 		let mut params = BTreeMap::new();
 		params.insert("method", "auth.getSession".to_string());
@@ -137,7 +106,6 @@ impl LastfmClient {
 		self.session_key.lock().unwrap().clone()
 	}
 
-	// --- Live calls -----------------------------------------------------
 
 	pub async fn update_now_playing(&self, t: &NowPlayingTrack) -> Result<()> {
 		let sk = self
@@ -154,8 +122,6 @@ impl LastfmClient {
 		Ok(())
 	}
 
-	/// Submit up to BATCH_SIZE scrobbles in one call, per the API's
-	/// array-parameter convention (artist[0], artist[1], ...).
 	async fn scrobble_batch(&self, tracks: &[ScrobbleTrack]) -> Result<()> {
 		let sk = self
 			.session_key()
@@ -171,9 +137,7 @@ impl LastfmClient {
 			params.insert(format!("timestamp[{i}]"), t.started_at.to_string());
 			params.insert(format!("duration[{i}]"), t.duration_secs.to_string());
 		}
-		// call() takes &str keys; rebuild with leaked-safe str refs is
-		// awkward with dynamic keys, so duplicate the minimal signing
-		// logic here instead of reusing call().
+
 		let mut full = params.clone();
 		full.insert("api_key".into(), self.api_key.clone());
 		let mut raw = String::new();
@@ -199,7 +163,6 @@ impl LastfmClient {
 	}
 }
 
-// --- Durable queue -------------------------------------------------------
 
 pub fn init_queue_db(conn: &Connection) -> Result<()> {
 	conn.execute(
@@ -226,9 +189,6 @@ pub fn enqueue(conn: &Connection, t: &ScrobbleTrack) -> Result<()> {
 	Ok(())
 }
 
-/// Called on an interval from main.rs. Pulls a batch, submits it, and only
-/// removes rows that actually succeeded - anything else stays queued with
-/// its attempt count bumped for exponential-ish backoff by the caller.
 pub async fn flush_queue(conn: &Mutex<Connection>, client: &LastfmClient) -> Result<usize> {
 	if !client.has_session() {
 		return Ok(0);
