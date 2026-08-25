@@ -8,11 +8,6 @@ export interface TrackMeta {
 	duration_secs: number;
 }
 
-/**
- * Thin wrapper around the `scan_library` / `list_tracks` Tauri commands so
- * the Library view and the Settings folder picker share one source of
- * truth instead of each keeping their own copy that can drift out of sync.
- */
 export const library = (() => {
 	let tracks = $state<TrackMeta[]>([]);
 	let scanning = $state(false);
