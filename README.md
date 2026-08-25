@@ -73,7 +73,7 @@ the hamster will (probably) find it.
 | Watermelon Gum | A good FLAC player |
 | Pictures of my gay cousin | A girlfriend |
 | Idk what to put here | A volume control bar |
-| A free cameo from gaming4hope | Music that isn't Chief Keef — Love Sosa |
+| A free cameo from gaming4hope | Music that isn't Chief Keef - Love Sosa |
 
 ## License
 
