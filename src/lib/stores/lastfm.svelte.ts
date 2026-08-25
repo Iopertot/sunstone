@@ -1,18 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from '@tauri-apps/plugin-shell';
 
-/**
- * Drives the two-step Last.fm "web auth" flow described in the README:
- * 1. startAuth() gets a token from Rust, opens the approval URL in the
- *    user's real browser (not the webview - Last.fm's login page expects
- *    that), and holds onto the token.
- * 2. Once the user has approved access in the browser, finishAuth()
- *    exchanges that token for a permanent session key, which Rust then
- *    persists to config.json.
- *
- * Shared between the Settings view (where the connect flow lives) and the
- * Now Scrobbling view (which just reads `connected`).
- */
 export const lastfm = (() => {
 	let connected = $state(false);
 	let checked = $state(false);
