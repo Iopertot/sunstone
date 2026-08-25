@@ -1,4 +1,3 @@
-// Prevents an extra terminal window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod lastfm;
@@ -52,7 +51,6 @@ fn db_path(app: &tauri::AppHandle) -> std::path::PathBuf {
 	dir.join("sunstone.sqlite")
 }
 
-// --- Commands exposed to the Svelte frontend ------------------------------
 
 #[tauri::command]
 async fn lastfm_status(state: State<'_, AppState>) -> Result<bool, String> {
@@ -119,10 +117,6 @@ fn main() {
 			let handle = app.handle().clone();
 			let cfg = load_config(&handle);
 
-			// Registering an app at https://www.last.fm/api/account/create
-			// gives you an api_key/shared secret - drop them in the config
-			// file at app_config_dir/config.json (or wire a settings UI
-			// that writes it via save_config).
 			let client = LastfmClient::new(cfg.api_key, cfg.api_secret, cfg.session_key);
 
 			let db = Connection::open(db_path(&handle)).expect("failed to open db");
@@ -134,10 +128,6 @@ fn main() {
 				db: Mutex::new(db),
 			});
 
-			// Background retry loop: every 30s, try to flush anything
-			// still sitting in the queue. This is what makes scrobbling
-			// durable across dropped connections, sleep, or a track that
-			// finished while the window was closed.
 			let handle_for_loop = handle.clone();
 			tauri::async_runtime::spawn(async move {
 				let mut interval = tokio::time::interval(Duration::from_secs(30));
