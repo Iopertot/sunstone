@@ -9,14 +9,6 @@ export interface Track {
 	durationSecs: number;
 }
 
-/**
- * The audio graph. Amethyst's whole pitch is a node-based routing system
- * built on the Web Audio API - a webview gives us that API for free, so we
- * keep the same mental model: source -> [insert nodes] -> gain -> analyser
- * -> destination. Extra nodes (EQ bands, a limiter, whatever) slot in
- * between gainNode and analyserNode later without touching this file's
- * public surface.
- */
 class AudioGraph {
 	ctx: AudioContext;
 	private el: HTMLAudioElement;
@@ -50,18 +42,11 @@ function getGraph(): AudioGraph {
 	return graph;
 }
 
-// --- Scrobble threshold logic --------------------------------------------
-// Last.fm rule: a track qualifies once it's played >= 50% of its duration,
-// or 4 minutes, whichever is LOWER - and only if the track itself is over
-// 30s. The scrobble is timestamped to when the track STARTED, not when it
-// crossed the threshold. We hand the started-at timestamp to Rust up front
-// and let the backend own the timer + retry queue entirely, so a page
-// reload or the webview losing focus can't drop it.
 let scrobbleTimer: ReturnType<typeof setTimeout> | null = null;
 
 function armScrobble(track: Track, startedAtUnix: number) {
 	if (scrobbleTimer) clearTimeout(scrobbleTimer);
-	if (track.durationSecs <= 30) return; // ineligible per Last.fm rules
+	if (track.durationSecs <= 30) return; 
 
 	const thresholdSecs = Math.min(track.durationSecs / 2, 240);
 	scrobbleTimer = setTimeout(() => {
@@ -140,8 +125,6 @@ export const player = (() => {
 	};
 })();
 
-// small local helper so this file doesn't need a top-level tauri import
-// just for one conversion call
 function convertFileSrc(path: string): string {
 	return `asset://localhost/${encodeURIComponent(path)}`;
 }
