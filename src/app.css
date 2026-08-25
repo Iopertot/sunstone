@@ -1,40 +1,24 @@
-/*
- * Sunstone theme tokens.
- *
- * The mineral is the brief: sunstone is a feldspar with copper platelets
- * suspended in it that catch light in flashes of orange-red as you tilt it
- * ("schiller" / aventurescence), sitting in a matrix that's otherwise a
- * warm, translucent honey-brown. That's the palette below — a dark mocha
- * base (never pure black, always a little warm), cream text, and the
- * copper->ember gradient held in reserve for the things that actually move
- * or are "live": playback progress, the active track, the waveform/level
- * meters, hover glow. It is not a flat accent color used everywhere.
- */
+
 
 :root {
-	/* Surfaces — espresso, not void black */
 	--bg-void: #17110c;
 	--bg-surface: #221a13;
 	--bg-elevated: #2c2118;
 	--bg-elevated-hover: #35271b;
 	--border-subtle: #3a2c1e;
 
-	/* Text — warm cream down to muted tan */
 	--text-primary: #f2e6d3;
 	--text-secondary: #c9b49b;
 	--text-muted: #8f7a63;
 
-	/* The schiller: copper -> ember, used for active/moving state only */
 	--accent-copper: #c8763c;
 	--accent-ember: #e2572f;
 	--accent-glow: #ff9a4d;
 	--accent-gradient: linear-gradient(120deg, var(--accent-copper) 0%, var(--accent-ember) 100%);
 
-	/* Functional (kept warm, not traffic-light saturated) */
 	--color-danger: #d1553f;
 	--color-success: #9caf6b;
 
-	/* Layout rhythm — Amethyst runs dense, panel-based, low border-radius */
 	--radius-sm: 4px;
 	--radius-md: 6px;
 	--sidebar-width: 240px;
@@ -91,8 +75,6 @@ button {
 	cursor: pointer;
 }
 
-/* The one place per-view we allow the full schiller flash: anything
-   actively playing or being dragged. Everything else stays quiet. */
 .is-live {
 	background: var(--accent-gradient);
 }
