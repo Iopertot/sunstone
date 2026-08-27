@@ -106,7 +106,6 @@ impl LastfmClient {
 		self.session_key.lock().unwrap().clone()
 	}
 
-
 	pub async fn update_now_playing(&self, t: &NowPlayingTrack) -> Result<()> {
 		let sk = self
 			.session_key()
@@ -137,7 +136,6 @@ impl LastfmClient {
 			params.insert(format!("timestamp[{i}]"), t.started_at.to_string());
 			params.insert(format!("duration[{i}]"), t.duration_secs.to_string());
 		}
-
 		let mut full = params.clone();
 		full.insert("api_key".into(), self.api_key.clone());
 		let mut raw = String::new();
@@ -162,7 +160,6 @@ impl LastfmClient {
 		Ok(())
 	}
 }
-
 
 pub fn init_queue_db(conn: &Connection) -> Result<()> {
 	conn.execute(

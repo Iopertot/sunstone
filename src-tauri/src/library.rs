@@ -1,4 +1,5 @@
 use anyhow::Result;
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use lofty::file::{AudioFile, TaggedFileExt};
 use lofty::probe::Probe;
 use lofty::tag::Accessor;
@@ -14,6 +15,12 @@ pub struct TrackMeta {
 	pub artist: String,
 	pub album: String,
 	pub duration_secs: u32,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct AlbumArt {
+	pub mime: String,
+	pub data_base64: String,
 }
 
 const AUDIO_EXTS: &[&str] = &["mp3", "flac", "wav", "ogg", "m4a", "opus"];
@@ -51,6 +58,22 @@ fn read_track_meta(path: &Path) -> Option<TrackMeta> {
 			.and_then(|t| t.album().map(|s| s.to_string()))
 			.unwrap_or_else(|| "Unknown Album".into()),
 		duration_secs: properties.duration().as_secs() as u32,
+	})
+}
+
+pub fn read_album_art(path: &Path) -> Option<AlbumArt> {
+	let tagged = Probe::open(path).ok()?.read().ok()?;
+	let tag = tagged.primary_tag().or_else(|| tagged.first_tag())?;
+	let picture = tag.pictures().first()?;
+
+	let mime = picture
+		.mime_type()
+		.map(|m| m.as_str().to_string())
+		.unwrap_or_else(|| "image/jpeg".to_string());
+
+	Some(AlbumArt {
+		mime,
+		data_base64: STANDARD.encode(picture.data()),
 	})
 }
 

@@ -1,85 +1,75 @@
-# Sunstone - Straight Bullshit
+# Sunstone
 
-A desktop music player built out of annoyance and spite. Frontend is
-Svelte 5 because it's fast, backend is Rust because it's fast, and
-somewhere in the middle there's a hamster on a wheel who does the
-actual work and sometimes chews on the power cable, which is why your
-speakers scream once in a while. He's trying his best. Leave him
-alone.
+A personal, non-commercial music player in the spirit of [Geoxor's
+Amethyst](https://github.com/Geoxor/Amethyst) — same idea (a proper
+desktop player built around a Web Audio node graph), but:
 
-> **Status:** Early build by a
-> hamster with no union representation. The player transport, the
-> theme, and the Last.fm chief keef auto scrobbler might work Everything else is
-> two limes and a prayer. See [Shit you aren't getting](#roadmap-shit-you-arent-getting).
+- **Svelte 5 + SvelteKit** instead of Vue
+- **Tauri (Rust)** instead of Electron — smaller, and it lets the Last.fm
+  logic run as a real background service instead of code tied to a UI
+  component's lifecycle
+- **Last.fm scrobbling that's actually durable** — see below
+- **Sunstone theme** — see `src/app.css` for the rationale, not just hex
+  codes
 
-## Why a hamster, and not Electron
+This is a starting skeleton, not a finished clone: the player transport,
+theme system, library scanner, and — the part you specifically asked
+for — the full Last.fm auth/scrobble/retry pipeline are real and wired
+end to end. The library browser UI, queue/playlists, and the node-based
+DSP chain (EQ, etc.) are left as an empty content pane for you to build
+out next.
 
-| A typical Electron player | Sunstone |
-|---|---|
-| Your app (JS) | Crackhead and a paint brush |
-| Node.js runtime | Dave & Buster's coupons |
-| Chromium, bundled whole | Hamster on a wheel |
-| **Actually good** | **Hot fucking garbage** |
+## Why the scrobbling should actually work this time
 
-We know. We're keeping it anyway.
+Three rules the Last.fm API cares about, implemented in
+`src-tauri/src/lastfm.rs`:
 
-## What it (maybe) does
+1. `track.updateNowPlaying` (live status) and `track.scrobble` (the
+   permanent record) are separate calls — both are implemented.
+2. A track only qualifies once it's played **≥50% of its duration or 4
+   minutes, whichever is lower**, and only if it's longer than 30s
+   (`src/lib/stores/player.ts`, `armScrobble`).
+3. Every eligible scrobble is written to a local sqlite queue
+   immediately (`scrobble_queue` table) and a background loop in Rust
+   retries it every 30s until Last.fm accepts it — in batches of up to
+   50, per the API's array-parameter convention. This is what survives
+   a dropped connection, the machine sleeping, or the app being closed
+   mid-track, which is the usual way scrobblers quietly lose plays.
 
-- Reads your mp3/flac/wav/ogg/m4a/opus tags, most of the time,
-  correctly
-- Scrobbles to Last.fm, assuming the hamster hasn't chewed through
-  the ethernet cable this week
-- Automatic Love Sosa Scrobble
+## Setup
 
-### last.fm
+1. Install [Rust](https://rustup.rs), [Node.js](https://nodejs.org)
+   (20+), and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/)
+   for your OS.
+2. `npm install`
+3. Register an app at <https://www.last.fm/api/account/create> to get
+   an API key + shared secret.
+4. Run the app once (`npm run tauri dev`) so it creates its config
+   dir **and an empty `config.json`**, then quit it and edit the generated
+   `config.json` (path printed by `app_config_dir` — typically
+   `~/.config/moe.local.sunstone/config.json` on Linux,
+   `~/Library/Application Support/moe.local.sunstone/config.json` on
+   macOS, `%APPDATA%\moe.local.sunstone\config.json` on Windows) to
+   fill in `api_key` and `api_secret`.
+5. `npm run tauri dev` again. Call the `lastfm_start_auth` command
+   from the frontend (wire a "Connect Last.fm" button in Settings —
+   not built yet) to get an auth URL, open it, approve access, then
+   call `lastfm_complete_auth` with the token to store a permanent
+   session key.
+6. Point the library scanner (`scan_library` command) at a music
+   folder to populate the sqlite `tracks` table.
 
-The crackhead and his tinfoil hat are sending 5g waves to last fm headquarters
-to auto scrobble chief keef love sosa to your account
+## What's next
 
+Good next slices, roughly in order:
+- A Settings view wiring the Last.fm connect flow and folder picker
+  (`@tauri-apps/plugin-dialog` is already a dependency)
+- The library grid/list reading from `list_tracks`
+- A visualizer reading `player.analyser` (an `AnalyserNode`, already
+  wired into the audio graph) — this is where Amethyst's look lives
+- Queue/playlist state, persisted to sqlite alongside the queue
 
-## Getting this running
-
-Windows. Fuck your other OS.
-
-```bash
-git clone https://github.com/Iopertot/sunstone
-cd sunstone
-npm install
-```
-
-You'll also need Rust and the
-[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for
-your OS, because the hamster needs a wheel to run on.
-
-Register an app at <https://www.last.fm/api/account/create> for an
-API key + secret. Run it once to generate a config file:
-
-```bash
-npm run tauri dev
-```
-
-then quit and drop your key + secret into the generated
-`config.json` (path is under your OS's app-config dir, identifier
-`moe.local.sunstone`). Run `npm run tauri dev` again. There's no
-"Connect Last.fm" button in Settings yet, so you're calling
-`lastfm_start_auth` / `lastfm_complete_auth` from the frontend
-yourself for now. Point `scan_library` at a folder full of music and
-the hamster will (probably) find it.
-
-## Roadmap: shit you aren't getting
-
-| Maybe eventually | Never getting |
-|---|---|
-| Watermelon Gum | A good FLAC player |
-| Pictures of my gay cousin | A girlfriend |
-| Idk what to put here | A volume control bar |
-| A free cameo from gaming4hope | Music that isn't Chief Keef - Love Sosa |
-
-## License
-
-None. I got a DUI.
-
----
-
-`sunstone.lopertot.com`  built with hatred, no affiliation to the
-Chinese government, and no plans to fix any of this.
+If you want to keep building this iteratively across sessions, Claude
+Code (desktop or terminal) is a better fit than chat for the rest of
+this — it can run `cargo build`/`npm run tauri dev` directly and keep
+the whole repo in context.

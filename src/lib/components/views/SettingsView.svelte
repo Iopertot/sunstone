@@ -1,13 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { invoke } from '@tauri-apps/api/core';
 	import { open as openDialog } from '@tauri-apps/plugin-dialog';
 	import { lastfm } from '$lib/stores/lastfm.svelte';
 	import { library } from '$lib/stores/library.svelte';
 
 	let folderPath = $state<string | null>(null);
 
-	onMount(() => {
+	onMount(async () => {
 		lastfm.refreshStatus();
+		library.refresh();
+		try {
+			folderPath = await invoke<string | null>('get_last_library_folder');
+		} catch (err) {
+			console.error('failed to load last library folder', err);
+		}
 	});
 
 	async function pickFolder() {
@@ -56,8 +63,8 @@
 			<p class="error">{lastfm.error}</p>
 		{/if}
 		<p class="hint small">
-			Needs <code>api_key</code>/<code>api_secret</code> in your config file first — see the
-			README's Setup section for where that file lives.
+			Needs <code>api_key</code>/<code>api_secret</code> in your config file first — it lives
+			in the app's config folder as <code>config.json</code>.
 		</p>
 	</section>
 </div>
