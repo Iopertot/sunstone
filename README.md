@@ -1,7 +1,7 @@
 # Sunstone
 
 A personal, non-commercial music player in the spirit of [Geoxor's
-Amethyst](https://github.com/Geoxor/Amethyst) — same idea (a proper
+Amethyst](https://github.com/Geoxor/Amethyst) same idea (a proper
 desktop player built around a Web Audio node graph), but:
 
 - **Svelte 5 + SvelteKit**
